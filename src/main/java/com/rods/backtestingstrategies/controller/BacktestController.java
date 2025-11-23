@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 //Exposing the various strategies for backtesting through this controller
 // -> for now have only implemented the SMA crossover strategy and will keep the file structure  same
 // -> which
@@ -24,10 +23,9 @@ public class BacktestController {
     @PostMapping("/{symbol}")
     public ResponseEntity<BacktestResult> runBacktest(
             @PathVariable String symbol,
-            @RequestParam(defaultValue = "100000") double capital
-    ) {
-        BacktestResult result = backtestService.backtest(symbol, capital);
+            @RequestParam(defaultValue = "SMA Crossover") String strategy,
+            @RequestParam(defaultValue = "100000") double capital) {
+        BacktestResult result = backtestService.backtest(symbol, strategy, capital);
         return ResponseEntity.ok(result);
     }
 }
-

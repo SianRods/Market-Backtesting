@@ -19,7 +19,7 @@ public class Candle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    // We are using this Candle Entity to store the data related to a Stock in the database "OHLVC"
     private String symbol;
     private LocalDate date;
     private double openPrice;

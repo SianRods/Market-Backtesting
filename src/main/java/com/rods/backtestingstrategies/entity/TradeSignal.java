@@ -1,5 +1,7 @@
 package com.rods.backtestingstrategies.entity;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,8 +17,9 @@ import java.time.LocalDate;
 
 public class TradeSignal {
     private LocalDate date;  // decided date for given time
-    @Autowired
+
+    @Enumerated(EnumType.STRING)      // store "BUY" / "SELL" in DB
     private SignalType type;  // deciding whether to enter or exit the market
-    private  double price; // position at which we are entereing the market
+    private  double price;
 
 }

@@ -8,6 +8,7 @@ package com.rods.backtestingstrategies.service;
 import com.crazzyghost.alphavantage.timeseries.response.TimeSeriesResponse;
 import com.rods.backtestingstrategies.entity.Candle;
 import com.rods.backtestingstrategies.repository.CandleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import java.util.List;
 @Service
 public class MarketDataService {
 
+    @Autowired
     private final AlphaVantageService alphaVantageService;
     private final CandleRepository candleRepository;
 
@@ -27,6 +29,8 @@ public class MarketDataService {
 
     public void syncDailyCandles(String symbol) {
         TimeSeriesResponse response = alphaVantageService.getDailySeries(symbol);
+        System.out.println(response);
+
 
         response.getStockUnits().forEach(unit -> {
             Candle candle = new Candle();
@@ -43,7 +47,15 @@ public class MarketDataService {
     }
 
     public List<Candle> getCandles(String symbol) {
-        return candleRepository.findBySymbolOrderByDateAsc(symbol);
+        // returning the candles for given stock in ascending order by the dates
+        // using this we will calculate and decide the strategies for BUY/SELL when potential crossover happens
+        List<Candle> candles= candleRepository.findBySymbolOrderByDateAsc(symbol);
+        if(candles.isEmpty()){
+            // if there is no availble data in the database sync with the latest market data
+            syncDailyCandles(symbol);
+        }
+        candles=candleRepository.findBySymbolOrderByDateAsc(symbol);
+        return candles;
     }
 }
 
