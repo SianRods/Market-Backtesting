@@ -13,13 +13,13 @@ import java.util.List;
 public class SmaCrossoverStrategy implements Strategy {
 
     @Override
-    public List<TradeSignal> generateSignals(List<Candle> candles) {
+    public List<TradeSignal> generateSignals(List<Candle> candles, Integer shortDuration, Integer longDuration) {
         // The length of the windows is entirely dependend on the type of the
         // commodities being traded
 
         // if we don't have the latest data we then have to keep the window short
-        int shortWindow = 10;
-        int longWindow = 20;
+        int shortWindow = shortDuration;
+        int longWindow = longDuration;
 
         List<Double> shortSma = sma(candles, shortWindow);
         List<Double> longSma = sma(candles, longWindow);

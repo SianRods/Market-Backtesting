@@ -13,7 +13,7 @@ public interface Strategy {
     // market with some position
     // at a given time or not
 
-    List<TradeSignal> generateSignals(List<Candle> candles);
+    List<TradeSignal> generateSignals(List<Candle> candles, Integer shortDuration, Integer LongDuration);
 
     String getName();
 }

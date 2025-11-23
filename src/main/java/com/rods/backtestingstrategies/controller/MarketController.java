@@ -1,15 +1,18 @@
 package com.rods.backtestingstrategies.controller;
 
+import com.rods.backtestingstrategies.entity.Stock;
 import com.rods.backtestingstrategies.service.AlphaVantageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Repository;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/market")
+@CrossOrigin
 public class MarketController {
 
     @Autowired
@@ -28,6 +31,15 @@ public class MarketController {
     @GetMapping("/search/{symbol}")
     public ResponseEntity<?> getSymbols(@PathVariable String symbol) {
         return ResponseEntity.ok(alphaVantageService.getSymbols(symbol));
+    }
+
+    @GetMapping("/stocks")
+    public ResponseEntity<?> getStocks(){
+        List<Stock> stocks= new ArrayList<>();
+        stocks.add( new Stock("AAPL","Apple Corporation"));
+        stocks.add(new Stock("MSFT","Mircosoft Corportation"));
+        return ResponseEntity.ok(stocks);
+
     }
 
 }

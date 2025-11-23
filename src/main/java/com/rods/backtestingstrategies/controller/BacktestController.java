@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 // -> which
 @RestController
 @RequestMapping("/api/backtest")
+@CrossOrigin
 public class BacktestController {
 
     @Autowired
@@ -24,8 +25,10 @@ public class BacktestController {
     public ResponseEntity<BacktestResult> runBacktest(
             @PathVariable String symbol,
             @RequestParam(defaultValue = "SMA Crossover") String strategy,
-            @RequestParam(defaultValue = "100000") double capital) {
-        BacktestResult result = backtestService.backtest(symbol, strategy, capital);
+            @RequestParam(defaultValue = "100000") double capital,
+            @RequestParam(defaultValue = "10") Integer smaShort,
+            @RequestParam(defaultValue = "20") Integer smaLong) {
+        BacktestResult result = backtestService.backtest(symbol, strategy, capital, smaShort,smaLong);
         return ResponseEntity.ok(result);
     }
 }
