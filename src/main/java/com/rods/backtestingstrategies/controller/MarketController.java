@@ -37,9 +37,13 @@ public class MarketController {
     public ResponseEntity<?> getStocks(){
         List<Stock> stocks= new ArrayList<>();
         stocks.add( new Stock("AAPL","Apple Corporation"));
-        stocks.add(new Stock("MSFT","Mircosoft Corportation"));
+        stocks.add(new Stock("MSFT","Microsoft Corportation"));
         return ResponseEntity.ok(stocks);
 
     }
+
+    // One Simple Idea is to use Database to cache the already available stock symbols and them according fetch them
+    // first from the DB if not available we can then hit the database
+
 
 }

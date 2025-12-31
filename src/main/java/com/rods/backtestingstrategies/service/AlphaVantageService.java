@@ -20,6 +20,8 @@ public class AlphaVantageService {
     public AlphaVantageService() {
     }
 
+
+    // Important to understand the use of Post Construct
     @PostConstruct
     public void initCredentialsPostConstruct(){
 
@@ -28,6 +30,7 @@ public class AlphaVantageService {
             .key(apiKey)
             .timeOut(10)
             .build();
+
         AlphaVantage.api().init(cfg);
     }
 
@@ -45,7 +48,7 @@ public class AlphaVantageService {
                 .timeSeries()
                 .daily()
                 .forSymbol(symbol)
-                .outputSize(OutputSize.COMPACT) // or COMPACT -> is available in the free tier
+                .outputSize(OutputSize.COMPACT) // or COMPACT -> is available in the free tier (mostly number of days )
                 .fetchSync();
     }
 

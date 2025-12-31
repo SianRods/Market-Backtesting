@@ -2,12 +2,13 @@ package com.rods.backtestingstrategies.service;
 
 // the main task of this class is to be able to process the data from the alpha vantage endpoints
 // and then use the data for saving the candles in the database
-
 // Also note that we are always using the cross-over moving strategies with respect days
 
 import com.crazzyghost.alphavantage.timeseries.response.TimeSeriesResponse;
 import com.rods.backtestingstrategies.entity.Candle;
+import com.rods.backtestingstrategies.entity.Stock;
 import com.rods.backtestingstrategies.repository.CandleRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,11 +21,14 @@ public class MarketDataService {
     @Autowired
     private final AlphaVantageService alphaVantageService;
     private final CandleRepository candleRepository;
+//    private final StockSymbolRepo stockSymbolRepo;
+
 
     public MarketDataService(AlphaVantageService alphaVantageService,
                              CandleRepository candleRepository) {
         this.alphaVantageService = alphaVantageService;
         this.candleRepository = candleRepository;
+//        this.stockSymbolRepo = stockSymbolRepo;
     }
 
     public void syncDailyCandles(String symbol) {
@@ -35,7 +39,7 @@ public class MarketDataService {
         response.getStockUnits().forEach(unit -> {
             Candle candle = new Candle();
             candle.setSymbol(symbol);
-            // -> using a parser to parse the localdate from the internal string implementation of the API
+            // -> using a parser to parse the local Date from the internal string implementation of the API
             candle.setDate(LocalDate.parse(unit.getDate()));
             candle.setOpenPrice(unit.getOpen());
             candle.setHighPrice(unit.getHigh());
@@ -57,6 +61,22 @@ public class MarketDataService {
         candles=candleRepository.findBySymbolOrderByDateAsc(symbol);
         return candles;
     }
+
+//    // Get the latest stock symbols from the database
+//    public List<Stock> getAvailableStock(){
+//        List<Stock> getStoredStocks = stockSymbolRepo.findAll();
+//        return  getStoredStocks;
+//    }
+
+
+
+
+
+
+
+
+
+
 }
 
 

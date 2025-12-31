@@ -18,7 +18,7 @@ public class BacktestResult {
     private double profitLoss;
     private double returnPct;
 
-    // time-series for charting
+    // time-series for charting -> denoting the holding capacity of the stocks
     private List<EquityPoint> equityCurve;
 
     // explicit buy / sell operations

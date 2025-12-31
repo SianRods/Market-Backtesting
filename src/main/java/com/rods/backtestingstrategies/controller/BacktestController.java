@@ -9,9 +9,12 @@ import org.springframework.web.bind.annotation.*;
 //Exposing the various strategies for backtesting through this controller
 // -> for now have only implemented the SMA crossover strategy and will keep the file structure  same
 // -> which
+
+//Frontend for this project is on the folder :
 @RestController
 @RequestMapping("/api/backtest")
 @CrossOrigin
+
 public class BacktestController {
 
     @Autowired
