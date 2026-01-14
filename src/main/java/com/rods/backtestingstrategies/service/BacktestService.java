@@ -1,130 +1,111 @@
 package com.rods.backtestingstrategies.service;
 
 import com.rods.backtestingstrategies.entity.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.rods.backtestingstrategies.strategy.Strategy;
+import com.rods.backtestingstrategies.strategy.StrategyFactory;
+import com.rods.backtestingstrategies.strategy.StrategyType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
-@Data
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class BacktestService {
 
-    @Autowired
     private final MarketDataService marketDataService;
-    private final SmaCrossoverStrategy smaCrossoverStrategy;
+    private final StrategyFactory strategyFactory;
 
+    public BacktestResult backtest(
+            String symbol,
+            StrategyType strategyType,
+            double initialCapital
+    ) {
 
-    public BacktestResult backtest(String symbol, String strategyName, double initialCapital,Integer shortDuration, Integer longDuration) {
+        Strategy strategy = strategyFactory.getStrategy(strategyType);
+
         List<Candle> candles = marketDataService.getCandles(symbol);
 
-        // safe-guard: no data -> return a minimal result with empty lists
+        // Safeguard: no data
         if (candles == null || candles.isEmpty()) {
-            System.err.println("WARNING: No data found for " + symbol + ". Check your API Key or limits.");
-            return new BacktestResult(
-                    initialCapital,        // start
-                    initialCapital,        // final
-                    0.0,                   // pnl
-                    0.0,                   // returnPct
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            );
+            return BacktestResult.empty(initialCapital);
         }
 
-        // Ensure candles are sorted ascending by date
+        // Ensure chronological order
         candles.sort(Comparator.comparing(Candle::getDate));
 
-        // generate signals (assumed chronological)
-        List<TradeSignal> signals = smaCrossoverStrategy.generateSignals(candles,shortDuration,longDuration);
-        // Map signals by date string for quick lookup (supports multiple signals on same date)
-        Map<String, List<TradeSignal>> signalsByDate = new HashMap<>();
-        DateTimeFormatter iso = DateTimeFormatter.ISO_LOCAL_DATE;
-
-        for (TradeSignal s : signals) {
-            // assume TradeSignal.getDate() returns java.time.LocalDate or String
-            String d;
-            Object sd = s.getDate();
-            if (sd instanceof java.time.LocalDate) {
-                d = ((java.time.LocalDate) sd).format(iso);
-            } else {
-                d = String.valueOf(sd);
-            }
-            signalsByDate.computeIfAbsent(d, k -> new ArrayList<>()).add(s);
-        }
-
         double cash = initialCapital;
-        long shares = 0L; // integer shares for all-in; change to double for fractional shares
+        long shares = 0L;
+
         List<EquityPoint> equityCurve = new ArrayList<>();
         List<Transaction> transactions = new ArrayList<>();
         List<CrossOver> crossovers = new ArrayList<>();
 
-        // Walk through each candle (daily) and execute signals when present
-        for (Candle c : candles) {
-            String dateStr;
-            Object cd = c.getDate();
-            if (cd instanceof java.time.LocalDate) dateStr = ((java.time.LocalDate) cd).format(iso);
-            else dateStr = String.valueOf(cd);
+        for (int i = 0; i < candles.size(); i++) {
 
-            double price = c.getClosePrice();
+            Candle candle = candles.get(i);
+            double price = candle.getClosePrice();
 
-            // if there are signals on this date, process them in order
-            List<TradeSignal> daySignals = signalsByDate.getOrDefault(dateStr, Collections.emptyList());
+            TradeSignal signal = strategy.evaluate(candles, i)
+                    .withStrategyName(strategy.getName());
 
-            // process each signal for that day
-            for (TradeSignal signal : daySignals) {
-                SignalType type = signal.getType();
-                double sigPrice = signal.getPrice() > 0 ? signal.getPrice() : price; // fallback to candle price
-                // record crossover event for UI (bull/bear)
-                crossovers.add(new CrossOver(dateStr, type == SignalType.BUY ? "bull" : "bear", sigPrice));
+            switch (signal.getSignalType()) {
 
-                if (type == SignalType.BUY && cash > 0.0) {
-                    // ALL-IN buy (integer shares)
-                    long buyShares = (long) Math.floor(cash / sigPrice);
-                    if (buyShares > 0) {
-                        double spent = buyShares * sigPrice;
-                        shares += buyShares;
-                        cash -= spent;
+                case BUY -> {
+                    if (cash > 0 && shares == 0) {
+                        long buyShares = (long) (cash / price);
+                        if (buyShares > 0) {
+                            cash -= buyShares * price;
+                            shares += buyShares;
 
-                        double equityAfter = cash + shares * price;
-                        transactions.add(new Transaction(dateStr, "BUY", sigPrice, buyShares, cash, equityAfter));
+                            transactions.add(
+                                    Transaction.buy(candle, price, buyShares, cash, cash + shares * price)
+                            );
+                            crossovers.add(CrossOver.bullish(candle));
+                        }
                     }
-                    // if buyShares==0 => price > cash, can't buy any full share
-                } else if (type == SignalType.SELL && shares > 0) {
-                    // sell all shares
-                    long sellShares = shares;
-                    double proceeds = sellShares * sigPrice;
-                    cash += proceeds;
-                    shares = 0L;
-
-                    double equityAfter = cash; // no shares left
-                    transactions.add(new Transaction(dateStr, "SELL", sigPrice, sellShares, cash, equityAfter));
                 }
-                // else ignore redundant signals (e.g., BUY when already in position)
+
+                case SELL -> {
+                    if (shares > 0) {
+                        double proceeds = shares * price;
+                        cash += proceeds;
+
+                        transactions.add(
+                                Transaction.sell(candle, price, shares, cash, cash)
+                        );
+                        crossovers.add(CrossOver.bearish(candle));
+
+                        shares = 0;
+                    }
+                }
+
+                case HOLD -> {
+                    // Explicit no-op
+                }
             }
 
-            // compute equity for the day (cash + shares * price)
             double equity = cash + shares * price;
-            equityCurve.add(new EquityPoint(dateStr, price, equity, shares, cash));
+            equityCurve.add(
+                    EquityPoint.of(candle, equity, shares, cash)
+            );
         }
 
-        // final values
-        EquityPoint lastPoint = equityCurve.get(equityCurve.size() - 1);
-        double finalValue = lastPoint.getEquity();
+        EquityPoint last = equityCurve.get(equityCurve.size() - 1);
+        double finalValue = last.getEquity();
         double pnl = finalValue - initialCapital;
-        double returnPct = initialCapital != 0 ? (pnl / initialCapital) * 100.0 : 0.0;
+        double returnPct = initialCapital == 0 ? 0 : (pnl / initialCapital) * 100.0;
 
-        return new BacktestResult(initialCapital, finalValue, pnl, returnPct, equityCurve, transactions, crossovers);
+        return BacktestResult.builder()
+                .startCapital(initialCapital)
+                .finalCapital(finalValue)
+                .profitLoss(pnl)
+                .returnPct(returnPct)
+                .equityCurve(equityCurve)
+                .transactions(transactions)
+                .crossovers(crossovers)
+                .build();
     }
-
-
-
-
 }

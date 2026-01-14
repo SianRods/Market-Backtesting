@@ -1,29 +1,44 @@
 package com.rods.backtestingstrategies.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.stereotype.Component;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
-@Component
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Builder
+@ToString
 public class BacktestResult {
-    // change it depending upon the frontend requirements
-    private double startCapital;
-    private double finalCapital;
-    private double profitLoss;
-    private double returnPct;
 
-    // time-series for charting -> denoting the holding capacity of the stocks
-    private List<EquityPoint> equityCurve;
+    // Capital metrics
+    private final double startCapital;
+    private final double finalCapital;
+    private final double profitLoss;
+    private final double returnPct;
 
-    // explicit buy / sell operations
-    private List<Transaction> transactions;
+    // Time-series equity curve
+    private final List<EquityPoint> equityCurve;
 
-    // crossover events (bull/bear)
-    private List<CrossOver> crossovers;
+    // Executed trades
+    private final List<Transaction> transactions;
+
+    // Bullish / Bearish crossover events
+    private final List<CrossOver> crossovers;
+
+    /* ==========================
+       Factory Helpers
+       ========================== */
+
+    public static BacktestResult empty(double capital) {
+        return BacktestResult.builder()
+                .startCapital(capital)
+                .finalCapital(capital)
+                .profitLoss(0.0)
+                .returnPct(0.0)
+                .equityCurve(List.of())
+                .transactions(List.of())
+                .crossovers(List.of())
+                .build();
+    }
 }

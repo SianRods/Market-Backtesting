@@ -55,13 +55,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- adding the alpha vantage dependency         -->
-
-        <dependency>
-            <groupId>com.github.crazzyghost</groupId>
-            <artifactId>alphavantage-java</artifactId>
-            <version>1.8.0</version>
-        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -71,6 +64,12 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.crazzyghost</groupId>
+            <artifactId>alphavantage-java</artifactId>
+            <version>1.8.0</version>
         </dependency>
 
     </dependencies>

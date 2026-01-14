@@ -1,9 +1,6 @@
 package com.rods.backtestingstrategies.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,6 +11,12 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(
+        name = "candles",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"symbol", "date"})
+        }
+)
 public class Candle {
 
     @Id
@@ -21,6 +24,8 @@ public class Candle {
     private Long id;
     // We are using this Candle Entity to store the data related to a Stock in the database "OHLVC"
     private String symbol;
+
+    // Enforcing that the Symbol and the Dates are always unique
     private LocalDate date;
     private double openPrice;
     private double highPrice;

@@ -4,78 +4,168 @@ package com.rods.backtestingstrategies.service;
 // and then use the data for saving the candles in the database
 // Also note that we are always using the cross-over moving strategies with respect days
 
+import com.crazzyghost.alphavantage.search.response.Match;
+import com.crazzyghost.alphavantage.search.response.SearchResponse;
 import com.crazzyghost.alphavantage.timeseries.response.TimeSeriesResponse;
 import com.rods.backtestingstrategies.entity.Candle;
 import com.rods.backtestingstrategies.entity.Stock;
+import com.rods.backtestingstrategies.entity.StockSymbol;
 import com.rods.backtestingstrategies.repository.CandleRepository;
 
+import com.rods.backtestingstrategies.repository.StockSymbolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class MarketDataService {
+    private static final int SYMBOL_CACHE_DAYS = 7;
 
     @Autowired
     private final AlphaVantageService alphaVantageService;
     private final CandleRepository candleRepository;
-//    private final StockSymbolRepo stockSymbolRepo;
+    private final StockSymbolRepository symbolRepository;
 
 
     public MarketDataService(AlphaVantageService alphaVantageService,
-                             CandleRepository candleRepository) {
+                             CandleRepository candleRepository, StockSymbolRepository symbolRepository) {
         this.alphaVantageService = alphaVantageService;
         this.candleRepository = candleRepository;
 //        this.stockSymbolRepo = stockSymbolRepo;
+        this.symbolRepository = symbolRepository;
     }
 
     public void syncDailyCandles(String symbol) {
-        TimeSeriesResponse response = alphaVantageService.getDailySeries(symbol);
-        System.out.println(response);
 
+        System.out.println("Sync Method Called for the given Request ");
+        TimeSeriesResponse response = alphaVantageService.getDailySeries(symbol);
+
+        // Fetch existing candle dates for this symbol
+        Set<LocalDate> existingDates =
+                new HashSet<>(candleRepository.findExistingDates(symbol));
+
+        List<Candle> newCandles = new ArrayList<>();
 
         response.getStockUnits().forEach(unit -> {
+
+            LocalDate date = LocalDate.parse(unit.getDate());
+
+            // Skip if candle already exists
+            if (existingDates.contains(date)) {
+                return;
+            }
+
             Candle candle = new Candle();
             candle.setSymbol(symbol);
-            // -> using a parser to parse the local Date from the internal string implementation of the API
-            candle.setDate(LocalDate.parse(unit.getDate()));
+            candle.setDate(date);
             candle.setOpenPrice(unit.getOpen());
             candle.setHighPrice(unit.getHigh());
             candle.setLowPrice(unit.getLow());
             candle.setClosePrice(unit.getClose());
             candle.setVolume((long) unit.getVolume());
-            candleRepository.save(candle);
+
+            newCandles.add(candle);
         });
+
+        // Bulk insert (much faster)
+        if (!newCandles.isEmpty()) {
+            try {
+                candleRepository.saveAll(newCandles);
+            } catch (DataIntegrityViolationException e) {
+                // Duplicate candle attempted → safely ignore or log
+                System.err.println("Duplicate Candles insertion is not valid ");
+            }
+        }
     }
 
+    // Used for rendering the charts on the frontend for every stocks
     public List<Candle> getCandles(String symbol) {
-        // returning the candles for given stock in ascending order by the dates
-        // using this we will calculate and decide the strategies for BUY/SELL when potential crossover happens
-        List<Candle> candles= candleRepository.findBySymbolOrderByDateAsc(symbol);
-        if(candles.isEmpty()){
-            // if there is no availble data in the database sync with the latest market data
+
+        List<Candle> candles = candleRepository.findBySymbolOrderByDateAsc(symbol);
+
+        // CASE 1: No data in DB → sync
+        if (candles.isEmpty()) {
             syncDailyCandles(symbol);
+            return candleRepository.findBySymbolOrderByDateAsc(symbol);
         }
-        candles=candleRepository.findBySymbolOrderByDateAsc(symbol);
+
+        // CASE 2: Data exists → check latest candle
+        LocalDate latestDate = candles.getLast().getDate();
+
+        if (LocalDate.now().isAfter(latestDate)) {
+            syncDailyCandles(symbol);
+            candles = candleRepository.findBySymbolOrderByDateAsc(symbol);
+        }
+
         return candles;
     }
 
-//    // Get the latest stock symbols from the database
-//    public List<Stock> getAvailableStock(){
-//        List<Stock> getStoredStocks = stockSymbolRepo.findAll();
-//        return  getStoredStocks;
-//    }
 
 
+    public List<StockSymbol> searchSymbols(String query) {
 
+        //  Search DB first
+        List<StockSymbol> dbResults = symbolRepository.searchSymbols(query);
 
+        //  Check freshness
+        LocalDateTime lastFetched =
+                symbolRepository.findLastFetchedForQuery(query);
 
+        boolean shouldRefresh =
+                dbResults.isEmpty()
+                        || lastFetched == null
+                        || lastFetched.isBefore(LocalDateTime.now().minusDays(SYMBOL_CACHE_DAYS));
 
+        if (!shouldRefresh) {
+            return dbResults;
+        }
 
+        //  Call AlphaVantage only if needed
+        SearchResponse response =
+                alphaVantageService.getSymbols(query);
 
+        if (response == null || response.getBestMatches() == null) {
+            return dbResults;
+        }
 
+        List<StockSymbol> newSymbols = new ArrayList<>();
+
+        for (Match match : response.getBestMatches()) {
+
+            // Prevent duplicates
+            if (symbolRepository.findBySymbol(match.getSymbol()) != null) {
+                continue;
+            }
+
+            StockSymbol symbol = new StockSymbol();
+            symbol.setSymbol(match.getSymbol());
+            symbol.setName(match.getName());
+            symbol.setType(match.getType());
+            symbol.setRegion(match.getRegion());
+            symbol.setMarketOpen(match.getMarketOpen());
+            symbol.setMarketClose(match.getMarketClose());
+            symbol.setTimezone(match.getTimezone());
+            symbol.setCurrency(match.getCurrency());
+            symbol.setMatchScore(Double.parseDouble(match.getMatchScore()));
+            symbol.setLastFetched(LocalDateTime.now());
+
+            newSymbols.add(symbol);
+        }
+
+        if (!newSymbols.isEmpty()) {
+            symbolRepository.saveAll(newSymbols);
+        }
+
+        //  Return updated results
+        return symbolRepository.searchSymbols(query);
+    }
 
 }
 
