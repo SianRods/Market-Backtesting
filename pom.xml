@@ -71,6 +71,12 @@
             <artifactId>alphavantage-java</artifactId>
             <version>1.8.0</version>
         </dependency>
+        <!-- Adding postgres dependency for deployment         -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
     </dependencies>
 
