@@ -37,5 +37,10 @@ alphavantage:
 
 
 server:
-    tomcat:
-      basedir: ${java.io.tmpdir}/tomcat
+  tomcat:
+    basedir: ${java.io.tmpdir}/tomcat
+
+jwt:
+  # 256-bit Base64 secret --> include it in the environment variables 
+  secret: ${JWT_SECRET}
+  expiration: 86400000 # 24 hours in milliseconds --> TOKEN_EXPIRY
