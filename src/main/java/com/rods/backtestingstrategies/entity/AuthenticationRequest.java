@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthenticationRequest {
+    @jakarta.validation.constraints.NotBlank(message = "Username cannot be blank")
     private String username;
+
+    @jakarta.validation.constraints.NotBlank(message = "Password cannot be blank")
     private String password;
 }
