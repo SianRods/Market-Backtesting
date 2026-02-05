@@ -15,7 +15,7 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         // only accept the request from this reference
-                        .allowedOrigins("https://backtest-livid.vercel.app/")
+                        .allowedOrigins("https://backtest-livid.vercel.app")
                         .allowedMethods("*")
                         .allowedHeaders("*");
             }
