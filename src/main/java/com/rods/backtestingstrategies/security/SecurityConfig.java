@@ -32,7 +32,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/server/**").permitAll() // Whitelist auth endpoints
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight checks
+                        .requestMatchers("/api/auth/**", "/server/**").permitAll() // Whitelist public endpoints
                         .anyRequest().authenticated() // Secure everything else
                 )
                 .sessionManagement(sess -> sess

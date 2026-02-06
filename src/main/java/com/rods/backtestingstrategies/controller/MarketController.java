@@ -5,6 +5,7 @@ import com.rods.backtestingstrategies.entity.Stock;
 import com.rods.backtestingstrategies.repository.CandleRepository;
 import com.rods.backtestingstrategies.service.AlphaVantageService;
 import com.rods.backtestingstrategies.service.MarketDataService;
+import com.rods.backtestingstrategies.service.YahooFinanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
@@ -21,18 +22,21 @@ public class MarketController {
 
     @Autowired
     private final AlphaVantageService alphaVantageService;
+    private final YahooFinanceService yahooFinanceService;
     private final CandleRepository candleRepository;
     private final MarketDataService marketDataService;
 
-    public MarketController(AlphaVantageService alphaVantageService, CandleRepository candleRepository, MarketDataService marketDataService) {
+    public MarketController(AlphaVantageService alphaVantageService, YahooFinanceService yahooFinanceService,
+            CandleRepository candleRepository, MarketDataService marketDataService) {
         this.alphaVantageService = alphaVantageService;
+        this.yahooFinanceService = yahooFinanceService;
         this.candleRepository = candleRepository;
         this.marketDataService = marketDataService;
     }
 
     @GetMapping("/daily/{symbol}")
     public ResponseEntity<?> getDaily(@PathVariable String symbol) {
-        return ResponseEntity.ok(alphaVantageService.getDailySeries(symbol));
+        return ResponseEntity.ok(yahooFinanceService.getDailyStockData(symbol));
     }
 
     // Route for searching for company symbols using the api
@@ -60,11 +64,9 @@ public class MarketController {
         return ResponseEntity.ok(marketDataService.getCandles(symbol));
     }
 
-
-
     // Endpoint for displaying the stock data with daily data
-    // One Simple Idea is to use Database to cache the already available stock symbols and them according fetch them
+    // One Simple Idea is to use Database to cache the already available stock
+    // symbols and them according fetch them
     // first from the DB if not available we can then hit the database
-
 
 }

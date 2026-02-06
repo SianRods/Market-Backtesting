@@ -16,6 +16,11 @@ import com.rods.backtestingstrategies.repository.StockSymbolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import yahoofinance.histquotes.HistoricalQuote;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.ZoneId;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,49 +35,65 @@ public class MarketDataService {
 
     @Autowired
     private final AlphaVantageService alphaVantageService;
+    private final YahooFinanceService yahooFinanceService;
     private final CandleRepository candleRepository;
     private final StockSymbolRepository symbolRepository;
 
-
-    public MarketDataService(AlphaVantageService alphaVantageService,
-                             CandleRepository candleRepository, StockSymbolRepository symbolRepository) {
+    public MarketDataService(AlphaVantageService alphaVantageService, YahooFinanceService yahooFinanceService,
+            CandleRepository candleRepository, StockSymbolRepository symbolRepository) {
         this.alphaVantageService = alphaVantageService;
+        this.yahooFinanceService = yahooFinanceService;
         this.candleRepository = candleRepository;
-//        this.stockSymbolRepo = stockSymbolRepo;
+        // this.stockSymbolRepo = stockSymbolRepo;
         this.symbolRepository = symbolRepository;
     }
 
     public void syncDailyCandles(String symbol) {
 
         System.out.println("Sync Method Called for the given Request ");
-        TimeSeriesResponse response = alphaVantageService.getDailySeries(symbol);
+
+        yahoofinance.Stock stock = yahooFinanceService.getDailyStockData(symbol);
+
+        if (stock == null) {
+            System.err.println("Could not fetch data from Yahoo Finance for symbol: " + symbol);
+            return;
+        }
+
+        List<HistoricalQuote> history;
+        try {
+            history = stock.getHistory();
+        } catch (IOException e) {
+            System.err.println("Error fetching history for symbol: " + symbol);
+            e.printStackTrace();
+            return;
+        }
 
         // Fetch existing candle dates for this symbol
-        Set<LocalDate> existingDates =
-                new HashSet<>(candleRepository.findExistingDates(symbol));
+        Set<LocalDate> existingDates = new HashSet<>(candleRepository.findExistingDates(symbol));
 
         List<Candle> newCandles = new ArrayList<>();
 
-        response.getStockUnits().forEach(unit -> {
+        for (HistoricalQuote quote : history) {
 
-            LocalDate date = LocalDate.parse(unit.getDate());
+            // Convert Calendar to LocalDate
+            LocalDate date = quote.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
             // Skip if candle already exists
             if (existingDates.contains(date)) {
-                return;
+                continue;
             }
 
             Candle candle = new Candle();
             candle.setSymbol(symbol);
             candle.setDate(date);
-            candle.setOpenPrice(unit.getOpen());
-            candle.setHighPrice(unit.getHigh());
-            candle.setLowPrice(unit.getLow());
-            candle.setClosePrice(unit.getClose());
-            candle.setVolume((long) unit.getVolume());
+            candle.setOpenPrice(quote.getOpen() != null ? quote.getOpen().doubleValue() : 0.0);
+            candle.setHighPrice(quote.getHigh() != null ? quote.getHigh().doubleValue() : 0.0);
+            candle.setLowPrice(quote.getLow() != null ? quote.getLow().doubleValue() : 0.0);
+            candle.setClosePrice(quote.getClose() != null ? quote.getClose().doubleValue() : 0.0);
+            candle.setVolume(quote.getVolume() != null ? quote.getVolume() : 0L);
 
             newCandles.add(candle);
-        });
+        }
 
         // Bulk insert (much faster)
         if (!newCandles.isEmpty()) {
@@ -107,29 +128,27 @@ public class MarketDataService {
         return candles;
     }
 
-
-
     public List<StockSymbol> searchSymbols(String query) {
 
-        //  Search DB first
+        // Search DB first
         List<StockSymbol> dbResults = symbolRepository.searchSymbols(query);
 
-        //  Check freshness
-        LocalDateTime lastFetched =
-                symbolRepository.findLastFetchedForQuery(query);
+        // Check freshness
+        LocalDateTime lastFetched = symbolRepository.findLastFetchedForQuery(query);
 
-        boolean shouldRefresh =
-                dbResults.isEmpty()
-                        || lastFetched == null
-                        || lastFetched.isBefore(LocalDateTime.now().minusDays(SYMBOL_CACHE_DAYS));
+        boolean shouldRefresh = dbResults.isEmpty()
+                || lastFetched == null
+                || lastFetched.isBefore(LocalDateTime.now().minusDays(SYMBOL_CACHE_DAYS));
 
         if (!shouldRefresh) {
+            System.out.println("Fetching key from DB: " + query);
             return dbResults;
         }
 
-        //  Call AlphaVantage only if needed
-        SearchResponse response =
-                alphaVantageService.getSymbols(query);
+        System.out.println("Fetching key from API: " + query);
+
+        // Call AlphaVantage only if needed
+        SearchResponse response = alphaVantageService.getSymbols(query);
 
         if (response == null || response.getBestMatches() == null) {
             return dbResults;
@@ -163,10 +182,8 @@ public class MarketDataService {
             symbolRepository.saveAll(newSymbols);
         }
 
-        //  Return updated results
+        // Return updated results
         return symbolRepository.searchSymbols(query);
     }
 
 }
-
-

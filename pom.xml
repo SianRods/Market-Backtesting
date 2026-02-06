@@ -93,6 +93,13 @@
             <artifactId>alphavantage-java</artifactId>
             <version>1.8.0</version>
         </dependency>
+
+        <!-- Yahoo Finance API -->
+        <dependency>
+            <groupId>com.yahoofinance-api</groupId>
+            <artifactId>YahooFinanceAPI</artifactId>
+            <version>3.17.0</version>
+        </dependency>
         <!-- Adding postgres dependency for deployment         -->
         <dependency>
             <groupId>org.postgresql</groupId>
