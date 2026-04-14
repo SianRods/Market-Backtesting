@@ -17,6 +17,12 @@ public class BacktestResult {
     private final double profitLoss;
     private final double returnPct;
 
+    // Advanced performance metrics
+    private final PerformanceMetrics metrics;
+
+    // Strategy name used
+    private final String strategyName;
+
     // Time-series equity curve
     private final List<EquityPoint> equityCurve;
 
@@ -36,6 +42,8 @@ public class BacktestResult {
                 .finalCapital(capital)
                 .profitLoss(0.0)
                 .returnPct(0.0)
+                .strategyName("N/A")
+                .metrics(PerformanceMetrics.builder().build())
                 .equityCurve(List.of())
                 .transactions(List.of())
                 .crossovers(List.of())

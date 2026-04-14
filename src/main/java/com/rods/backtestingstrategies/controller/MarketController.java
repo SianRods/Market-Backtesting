@@ -1,70 +1,104 @@
 package com.rods.backtestingstrategies.controller;
 
 import com.rods.backtestingstrategies.entity.Candle;
-import com.rods.backtestingstrategies.entity.Stock;
-import com.rods.backtestingstrategies.repository.CandleRepository;
-import com.rods.backtestingstrategies.service.AlphaVantageService;
+import com.rods.backtestingstrategies.entity.QuoteSummary;
 import com.rods.backtestingstrategies.service.MarketDataService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.rods.backtestingstrategies.service.TickerSeederService;
+import com.rods.backtestingstrategies.service.YahooFinanceService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
+import yahoofinance.Stock;
+import yahoofinance.quotes.stock.StockQuote;
+import yahoofinance.quotes.stock.StockStats;
 
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/market")
 @CrossOrigin
 public class MarketController {
 
-    @Autowired
-    private final AlphaVantageService alphaVantageService;
-    private final CandleRepository candleRepository;
+    private final YahooFinanceService yahooFinanceService;
     private final MarketDataService marketDataService;
+    private final TickerSeederService tickerSeederService;
 
-    public MarketController(AlphaVantageService alphaVantageService, CandleRepository candleRepository, MarketDataService marketDataService) {
-        this.alphaVantageService = alphaVantageService;
-        this.candleRepository = candleRepository;
+    public MarketController(YahooFinanceService yahooFinanceService,
+                            MarketDataService marketDataService,
+                            TickerSeederService tickerSeederService) {
+        this.yahooFinanceService = yahooFinanceService;
         this.marketDataService = marketDataService;
+        this.tickerSeederService = tickerSeederService;
     }
 
-    @GetMapping("/daily/{symbol}")
-    public ResponseEntity<?> getDaily(@PathVariable String symbol) {
-        return ResponseEntity.ok(alphaVantageService.getDailySeries(symbol));
-    }
-
-    // Route for searching for company symbols using the api
-    @GetMapping("/search/{symbol}")
-    public ResponseEntity<?> getSymbols(@PathVariable String symbol) {
-        return ResponseEntity.ok(alphaVantageService.getSymbols(symbol));
-    }
-
-    @GetMapping("/stocks")
-    public ResponseEntity<?> getStocks() {
-        List<Stock> stocks = new ArrayList<>();
-        stocks.add(new Stock("AAPL", "Apple Corporation"));
-        stocks.add(new Stock("MSFT", "Microsoft Corporation"));
-
-        // Making it dynamic and
-
-        return ResponseEntity.ok(stocks);
-
-    }
-
+    /**
+     * Fetch & cache candle data for a stock symbol.
+     * Uses DB-first approach with Yahoo Finance sync.
+     */
     @GetMapping("/stock/{symbol}")
     public ResponseEntity<List<Candle>> getDailyStockData(@PathVariable String symbol) {
-        System.out.println("Request Received");
-        System.out.println(symbol);
+        System.out.println("Request Received for: " + symbol);
         return ResponseEntity.ok(marketDataService.getCandles(symbol));
     }
 
+    /**
+     * Get real-time quote summary from Yahoo Finance.
+     * Includes price, change, volume, 52W range, fundamentals.
+     */
+    @GetMapping("/quote/{symbol}")
+    public ResponseEntity<?> getQuote(@PathVariable String symbol) {
+        try {
+            Stock stock = yahooFinanceService.getStock(symbol);
+            if (stock == null || stock.getQuote() == null) {
+                return ResponseEntity.notFound().build();
+            }
 
+            StockQuote quote = stock.getQuote();
+            StockStats stats = stock.getStats();
 
-    // Endpoint for displaying the stock data with daily data
-    // One Simple Idea is to use Database to cache the already available stock symbols and them according fetch them
-    // first from the DB if not available we can then hit the database
+            QuoteSummary summary = QuoteSummary.builder()
+                    .symbol(stock.getSymbol())
+                    .name(stock.getName())
+                    .exchange(stock.getStockExchange())
+                    .currency(stock.getCurrency())
+                    .price(quote.getPrice())
+                    .change(quote.getChange())
+                    .changePercent(quote.getChangeInPercent())
+                    .previousClose(quote.getPreviousClose())
+                    .open(quote.getOpen())
+                    .dayHigh(quote.getDayHigh())
+                    .dayLow(quote.getDayLow())
+                    .volume(quote.getVolume())
+                    .avgVolume(quote.getAvgVolume())
+                    .yearHigh(quote.getYearHigh())
+                    .yearLow(quote.getYearLow())
+                    .marketCap(stats != null ? stats.getMarketCap() : null)
+                    .pe(stats != null ? stats.getPe() : null)
+                    .eps(stats != null ? stats.getEps() : null)
+                    .priceToBook(stats != null ? stats.getPriceBook() : null)
+                    .bookValue(stats != null ? stats.getBookValuePerShare() : null)
+                    .dividendYield(stock.getDividend() != null ?
+                            stock.getDividend().getAnnualYieldPercent() : null)
+                    .build();
 
+            return ResponseEntity.ok(summary);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Failed to fetch quote: " + e.getMessage()));
+        }
+    }
 
+    /**
+     * Manually trigger a re-seed of the ticker database.
+     */
+    @PostMapping("/reseed-tickers")
+    public ResponseEntity<Map<String, Object>> reseedTickers() {
+        int count = tickerSeederService.reseedTickers();
+        return ResponseEntity.ok(Map.of(
+                "message", "Ticker database re-seeded successfully",
+                "totalSymbols", count
+        ));
+    }
 }

@@ -18,7 +18,7 @@ import java.time.LocalDate;
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // Force factory usage
 @EqualsAndHashCode(of = {"signalDate", "signalType", "price"})
 @ToString
-public class TradeSignal {
+public class fTradeSignal {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
