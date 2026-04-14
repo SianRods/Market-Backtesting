@@ -1,3 +1,5 @@
+package com.rods.backtestingstrategies;
+
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.URI;
@@ -10,7 +12,8 @@ import yahoofinance.Stock;
 public class TestYahooCrumb {
     public static void main(String[] args) {
         try {
-            System.setProperty("http.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
+            System.setProperty("http.agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
 
             CookieManager cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
             java.net.CookieHandler.setDefault(cookieManager);
@@ -39,9 +42,11 @@ public class TestYahooCrumb {
             String crumb = res2.body();
             System.out.println("Got crumb: " + crumb);
 
-            // Set crumb internally for yahoofinance-api if possible, using reflection if needed
-            Class.forName("yahoofinance.histquotes2.CrumbManager").getDeclaredMethod("setCrumb", String.class).invoke(null, crumb);
-            
+            // Set crumb internally for yahoofinance-api if possible, using reflection if
+            // needed
+            Class.forName("yahoofinance.histquotes2.CrumbManager").getDeclaredMethod("setCrumb", String.class)
+                    .invoke(null, crumb);
+
             Stock stock = YahooFinance.get("AAPL");
             System.out.println("Success! Price: " + stock.getQuote().getPrice());
 

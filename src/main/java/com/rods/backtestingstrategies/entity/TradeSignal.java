@@ -6,19 +6,16 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(
-        name = "trade_signals",
-        indexes = {
-                @Index(name = "idx_trade_signal_date", columnList = "signalDate"),
-                @Index(name = "idx_trade_signal_type", columnList = "signalType")
-        }
-)
+@Table(name = "trade_signals", indexes = {
+        @Index(name = "idx_trade_signal_date", columnList = "signalDate"),
+        @Index(name = "idx_trade_signal_type", columnList = "signalType")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA requirement
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // Force factory usage
-@EqualsAndHashCode(of = {"signalDate", "signalType", "price"})
+@EqualsAndHashCode(of = { "signalDate", "signalType", "price" })
 @ToString
-public class fTradeSignal {
+public class TradeSignal {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,9 +37,11 @@ public class fTradeSignal {
     @Column(length = 100)
     private String strategyName;
 
-    /* ==========================
-       Factory Methods
-       ========================== */
+    /*
+     * ==========================
+     * Factory Methods
+     * ==========================
+     */
 
     public static TradeSignal buy(Candle candle) {
         return new TradeSignal(
@@ -50,8 +49,7 @@ public class fTradeSignal {
                 candle.getDate(),
                 SignalType.BUY,
                 candle.getClosePrice(),
-                null
-        );
+                null);
     }
 
     public static TradeSignal sell(Candle candle) {
@@ -60,8 +58,7 @@ public class fTradeSignal {
                 candle.getDate(),
                 SignalType.SELL,
                 candle.getClosePrice(),
-                null
-        );
+                null);
     }
 
     public static TradeSignal hold() {
@@ -70,13 +67,14 @@ public class fTradeSignal {
                 null,
                 SignalType.HOLD,
                 0.0,
-                null
-        );
+                null);
     }
 
-    /* ==========================
-       Optional helpers
-       ========================== */
+    /*
+     * ==========================
+     * Optional helpers
+     * ==========================
+     */
 
     public TradeSignal withStrategyName(String strategyName) {
         this.strategyName = strategyName;
