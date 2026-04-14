@@ -26,4 +26,5 @@ public interface Strategy {
     //  Type of strategy being implemented
     StrategyType getType();
 
+
 }

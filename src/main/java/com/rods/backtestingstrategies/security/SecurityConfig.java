@@ -32,8 +32,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight checks
-                        .requestMatchers("/api/auth/**", "/server/**", "/error").permitAll() // Whitelist public endpoints
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Allow
+                                                                                                         // preflight
+                                                                                                         // checks
+                        .requestMatchers("/api/auth/**", "/server/**", "/error").permitAll() // Whitelist public
+                                                                                             // endpoints
                         .anyRequest().authenticated() // Secure everything else
                 )
                 .sessionManagement(sess -> sess
@@ -65,7 +68,8 @@ public class SecurityConfig {
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.Arrays.asList("http://localhost:5173", "http://localhost:3000", "https://backtest-livid.vercel.app"));
+        configuration.setAllowedOrigins(java.util.Arrays.asList("http://localhost:5173", "http://localhost:3000",
+                "https://backtest-livid.vercel.app"));
         configuration
                 .setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(java.util.Collections.singletonList("*"));

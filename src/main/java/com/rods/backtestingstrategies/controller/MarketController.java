@@ -26,8 +26,8 @@ public class MarketController {
     private final TickerSeederService tickerSeederService;
 
     public MarketController(YahooFinanceService yahooFinanceService,
-                            MarketDataService marketDataService,
-                            TickerSeederService tickerSeederService) {
+            MarketDataService marketDataService,
+            TickerSeederService tickerSeederService) {
         this.yahooFinanceService = yahooFinanceService;
         this.marketDataService = marketDataService;
         this.tickerSeederService = tickerSeederService;
@@ -79,8 +79,7 @@ public class MarketController {
                     .eps(stats != null ? stats.getEps() : null)
                     .priceToBook(stats != null ? stats.getPriceBook() : null)
                     .bookValue(stats != null ? stats.getBookValuePerShare() : null)
-                    .dividendYield(stock.getDividend() != null ?
-                            stock.getDividend().getAnnualYieldPercent() : null)
+                    .dividendYield(stock.getDividend() != null ? stock.getDividend().getAnnualYieldPercent() : null)
                     .build();
 
             return ResponseEntity.ok(summary);
@@ -98,7 +97,6 @@ public class MarketController {
         int count = tickerSeederService.reseedTickers();
         return ResponseEntity.ok(Map.of(
                 "message", "Ticker database re-seeded successfully",
-                "totalSymbols", count
-        ));
+                "totalSymbols", count));
     }
 }

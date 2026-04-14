@@ -7,11 +7,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "users")
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
+@Builder
 public class User {
 
     @Id
@@ -24,6 +24,6 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
-    private String role;
+    // for now i am planning to implement only user role
+    private String role; // e.g., "ROLE_USER"
 }

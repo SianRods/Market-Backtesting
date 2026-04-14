@@ -22,8 +22,8 @@ public class MarketDataService {
     private final StockSymbolRepository symbolRepository;
 
     public MarketDataService(YahooFinanceService yahooFinanceService,
-                             CandleRepository candleRepository,
-                             StockSymbolRepository symbolRepository) {
+            CandleRepository candleRepository,
+            StockSymbolRepository symbolRepository) {
         this.yahooFinanceService = yahooFinanceService;
         this.candleRepository = candleRepository;
         this.symbolRepository = symbolRepository;

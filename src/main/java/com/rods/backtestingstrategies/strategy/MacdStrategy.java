@@ -9,10 +9,10 @@ import java.util.List;
 /**
  * MACD (Moving Average Convergence Divergence) Strategy.
  *
- * MACD Line   = EMA(fastPeriod) - EMA(slowPeriod)
+ * MACD Line = EMA(fastPeriod) - EMA(slowPeriod)
  * Signal Line = EMA(signalPeriod) of MACD Line
  *
- * BUY  → MACD crosses above Signal Line
+ * BUY → MACD crosses above Signal Line
  * SELL → MACD crosses below Signal Line
  */
 @Component
