@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rods.backtestingstrategies.entity.StockSymbol;
 import com.rods.backtestingstrategies.repository.StockSymbolRepository;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.List;
  * Runs only when tickers are missing from the DB.
  */
 @Service
+@Slf4j
 public class TickerSeederService {
 
     private final StockSymbolRepository symbolRepository;
@@ -39,17 +41,17 @@ public class TickerSeederService {
     @PostConstruct
     public void seedTickers() {
         if (!seederEnabled) {
-            System.out.println("Ticker seeder is disabled.");
+            log.info("Ticker seeder is disabled");
             return;
         }
 
         long existingCount = symbolRepository.count();
         if (existingCount > 0) {
-            System.out.println("Ticker database already populated with " + existingCount + " symbols. Skipping seed.");
+            log.info("Ticker database already contains {} symbols; skipping seed", existingCount);
             return;
         }
 
-        System.out.println("Seeding ticker database from ticker_data.json...");
+        log.info("Seeding ticker database from ticker_data.json");
 
         try {
             ClassPathResource resource = new ClassPathResource("ticker_data.json");
@@ -91,11 +93,10 @@ public class TickerSeederService {
             }
 
             symbolRepository.saveAll(allSymbols);
-            System.out.println("Successfully seeded " + allSymbols.size() + " tickers across " +
-                    exchanges.size() + " exchanges.");
+            log.info("Seeded {} tickers across {} exchanges", allSymbols.size(), exchanges.size());
 
         } catch (IOException e) {
-            System.err.println("Failed to seed ticker data: " + e.getMessage());
+            log.error("Failed to seed ticker data: {}", e.getMessage());
         }
     }
 

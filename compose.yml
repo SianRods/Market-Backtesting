@@ -1,0 +1,37 @@
+services:
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-backtesting}
+      DB_USERNAME: ${POSTGRES_USER:-backtesting}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-backtesting}
+      JWT_SECRET: ${JWT_SECRET:-Zm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktbm90LXByb2R1Y3Rpb24=}
+      SERVER_PORT: 7860
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${SERVER_PORT:-7860}:7860"
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-backtesting}
+      POSTGRES_USER: ${POSTGRES_USER:-backtesting}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-backtesting}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:

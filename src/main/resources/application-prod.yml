@@ -1,6 +1,4 @@
 spring:
-  application:
-    name: BacktestingStrategies
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -8,7 +6,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:validate}
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -18,11 +16,11 @@ ticker:
   seeder:
     enabled: ${TICKER_SEEDER_ENABLED:false}
 
-server:
-  port: ${SERVER_PORT:8080}
-  tomcat:
-    basedir: ${java.io.tmpdir}/tomcat
-
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION_MS:86400000}
+
+logging:
+  level:
+    root: ${ROOT_LOG_LEVEL:INFO}
+    com.rods.backtestingstrategies: ${APP_LOG_LEVEL:INFO}

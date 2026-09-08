@@ -1,0 +1,22 @@
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+ticker:
+  seeder:
+    enabled: false
+
+jwt:
+  secret: dGVzdC1vbmx5LWJhY2tlbmQtdmVyaWZpY2F0aW9uLWtleQ==
+  expiration: 3600000
+
+logging:
+  level:
+    root: WARN
+    com.rods.backtestingstrategies: INFO

@@ -1,7 +1,6 @@
 package com.rods.backtestingstrategies.strategy;
 
 import com.rods.backtestingstrategies.entity.Candle;
-import com.rods.backtestingstrategies.entity.SignalType;
 import com.rods.backtestingstrategies.entity.TradeSignal;
 import org.springframework.stereotype.Component;
 

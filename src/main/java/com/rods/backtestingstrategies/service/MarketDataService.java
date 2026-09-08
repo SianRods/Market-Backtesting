@@ -4,6 +4,7 @@ import com.rods.backtestingstrategies.entity.Candle;
 import com.rods.backtestingstrategies.entity.StockSymbol;
 import com.rods.backtestingstrategies.repository.CandleRepository;
 import com.rods.backtestingstrategies.repository.StockSymbolRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import yahoofinance.histquotes.HistoricalQuote;
@@ -15,6 +16,7 @@ import java.time.ZoneId;
 import java.util.*;
 
 @Service
+@Slf4j
 public class MarketDataService {
 
     private final YahooFinanceService yahooFinanceService;
@@ -34,7 +36,7 @@ public class MarketDataService {
      * Only inserts candles for dates not yet stored.
      */
     public void syncDailyCandles(String symbol) {
-        System.out.println("Sync Method Called for: " + symbol);
+        log.info("Synchronizing daily candles for symbol={}", symbol);
 
         try {
             // Fetch 5 years of historical data for comprehensive backtesting
@@ -45,7 +47,7 @@ public class MarketDataService {
             List<HistoricalQuote> history = yahooFinanceService.getHistoricalData(symbol, from, to);
 
             if (history == null || history.isEmpty()) {
-                System.err.println("No historical data returned for: " + symbol);
+                log.warn("No historical data returned for symbol={}", symbol);
                 return;
             }
 
@@ -83,13 +85,13 @@ public class MarketDataService {
             if (!newCandles.isEmpty()) {
                 try {
                     candleRepository.saveAll(newCandles);
-                    System.out.println("Inserted " + newCandles.size() + " new candles for " + symbol);
+                    log.info("Inserted {} new candles for symbol={}", newCandles.size(), symbol);
                 } catch (DataIntegrityViolationException e) {
-                    System.err.println("Duplicate candles skipped for: " + symbol);
+                    log.warn("Duplicate candles skipped for symbol={}", symbol);
                 }
             }
         } catch (IOException e) {
-            System.err.println("Failed to fetch data from Yahoo Finance for: " + symbol + " - " + e.getMessage());
+            log.error("Failed to fetch data from Yahoo Finance for symbol={}: {}", symbol, e.getMessage());
         }
     }
 

@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/backtesting}
+    username: ${DB_USERNAME:backtesting}
+    password: ${DB_PASSWORD:backtesting}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: ${JPA_FORMAT_SQL:false}
+
+ticker:
+  seeder:
+    enabled: ${TICKER_SEEDER_ENABLED:true}
+
+jwt:
+  # Development-only key. Production never falls back to this value.
+  secret: ${JWT_SECRET:Zm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktbm90LXByb2R1Y3Rpb24=}
+  expiration: ${JWT_EXPIRATION_MS:86400000}
+
+logging:
+  level:
+    com.rods.backtestingstrategies: ${APP_LOG_LEVEL:INFO}

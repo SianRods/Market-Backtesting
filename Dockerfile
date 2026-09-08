@@ -1,15 +1,16 @@
 # ===============================
 #  Build stage (Java 21)
 # ===============================
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+FROM eclipse-temurin:21-jdk-alpine AS build
 
 WORKDIR /app
 
-COPY pom.xml .
-RUN mvn dependency:go-offline
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+RUN ./mvnw --batch-mode dependency:go-offline
 
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN ./mvnw --batch-mode clean verify
 
 # ===============================
 #  Runtime stage (Java 21)
@@ -24,7 +25,10 @@ WORKDIR /app
 
 COPY --from=build --chown=appuser:appgroup /app/target/*.jar app.jar
 
-# Hugging Face Spaces exposes port 7860
+ENV SPRING_PROFILES_ACTIVE=prod \
+    SERVER_PORT=7860
+
+# Hugging Face Spaces exposes port 7860 by default.
 EXPOSE 7860
 
-ENTRYPOINT ["java","-Dserver.port=7860","-jar","app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

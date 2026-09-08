@@ -5,6 +5,7 @@ import com.rods.backtestingstrategies.entity.QuoteSummary;
 import com.rods.backtestingstrategies.service.MarketDataService;
 import com.rods.backtestingstrategies.service.TickerSeederService;
 import com.rods.backtestingstrategies.service.YahooFinanceService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import yahoofinance.Stock;
@@ -12,13 +13,13 @@ import yahoofinance.quotes.stock.StockQuote;
 import yahoofinance.quotes.stock.StockStats;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/market")
 @CrossOrigin
+@Slf4j
 public class MarketController {
 
     private final YahooFinanceService yahooFinanceService;
@@ -39,7 +40,7 @@ public class MarketController {
      */
     @GetMapping("/stock/{symbol}")
     public ResponseEntity<List<Candle>> getDailyStockData(@PathVariable String symbol) {
-        System.out.println("Request Received for: " + symbol);
+        log.info("Daily market data requested for symbol={}", symbol);
         return ResponseEntity.ok(marketDataService.getCandles(symbol));
     }
 

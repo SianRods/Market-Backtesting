@@ -1,316 +1,172 @@
+# Backtesting Strategies API
 
+A Java 21 and Spring Boot backend for retrieving historical market data and evaluating trading strategies. The project is an educational system-design and backend-engineering exercise; it is not investment advice or a production trading system.
 
-# 📈 SMA Trading & Backtesting Platform
+## Current capabilities
 
-A **full-stack quantitative trading backtesting platform** that currently supports **Simple Moving Average (SMA)** and **Relative Strength Index (RSI)** strategies.
-The system is designed with **clean architecture**, **strategy-based extensibility**, and **scalability** as first-class concerns.
+- Daily OHLCV history cached in PostgreSQL.
+- Yahoo Finance-backed history and quote retrieval.
+- SMA crossover, RSI, MACD, and buy-and-hold strategies.
+- Single-symbol backtests, strategy comparisons, and weighted portfolio backtests.
+- Equity curves, transactions, crossover events, and basic performance metrics.
+- Username/password registration and login with stateless JWT authentication.
+- Curated symbol search across NASDAQ, NYSE, NSE, BSE, LSE, and TSE.
 
-The application is deployed with:
+## Current architecture
 
-* **Frontend** on **Vercel**
-* **Backend** on **Render**
-* **Database** using **PostgreSQL**
-
----
-
-## 🌐 Live Deployment
-
-| Layer       | Platform   |
-| ----------- | ---------- |
-| Frontend    | Vercel     |
-| Backend API | Render     |
-| Database    | PostgreSQL |
-
----
-
-## 🧠 What is Backtesting?
-
-**Backtesting** is the process of **evaluating a trading strategy using historical market data** to determine how it would have performed in the past.
-
-### Why Backtesting Matters
-
-* Validates a strategy **before risking real money**
-* Helps identify **strengths, weaknesses, and drawdowns**
-* Enables **objective comparison** between strategies
-
-### Example
-
-Assume a strategy:
-
-> Buy when SMA(20) crosses above SMA(50)
-> Sell when SMA(20) crosses below SMA(50)
-
-Using historical price data:
-
-* The system simulates every buy/sell signal
-* Tracks profits, losses, and overall returns
-* Produces performance metrics
-
-📌 **Important**:
-
-> Past performance does NOT guarantee future results — but backtesting is essential for strategy validation.
-
----
-
-## 📊 Trading Indicators Implemented
-
-### 1️⃣ Simple Moving Average (SMA)
-
-**SMA** smooths price data by calculating the average price over a fixed number of periods.
-
-![sma](sma.jpg)
-
-#### Formula
-
-```
-SMA = (Sum of prices over N periods) / N
+```text
+REST controllers
+    -> application services
+        -> strategy implementations
+        -> Spring Data JPA repositories -> PostgreSQL
+        -> Yahoo Finance integration
 ```
 
-#### Example
+The application is currently a modular Spring Boot monolith. Keeping the backtesting engine, persistence, and provider integration in one deployable unit is intentional at this project size.
 
-* SMA(20): Average of last 20 days
-* SMA(50): Average of last 50 days
+## Requirements
 
-#### Strategy Logic
+- Java 21
+- Docker with Docker Compose for local PostgreSQL and integration tests
+- Git
 
-* **Buy** → Short-term SMA crosses above long-term SMA
-* **Sell** → Short-term SMA crosses below long-term SMA
+The Maven Wrapper is included, so a separate Maven installation is not required.
 
-Used to:
+## Local setup
 
-* Identify trends
-* Reduce market noise
+Start PostgreSQL:
 
----
-
-### 2️⃣ Relative Strength Index (RSI)
-
-**RSI** is a momentum oscillator that measures the **speed and magnitude of price movements**.
-
-![rsi](rsi.png)
-
-#### RSI Range
-
-* `0 – 100`
-
-#### Common Interpretation
-
-| RSI Value | Meaning    |
-| --------- | ---------- |
-| > 70      | Overbought |
-| < 30      | Oversold   |
-
-#### Strategy Logic
-
-* **Buy** → RSI < 30 (oversold)
-* **Sell** → RSI > 70 (overbought)
-
-Used to:
-
-* Identify potential reversals
-* Detect overbought/oversold conditions
-
----
-
-## 🏗️ System Architecture Overview
-
-```
-Frontend (React)
-    |
-    | REST API Calls
-    v
-Backend (Spring Boot)
-    |
-    | Strategy Engine
-    | Indicator Calculations
-    v
-PostgreSQL Database
+```powershell
+docker compose up -d postgres
 ```
 
----
+Start the backend with the local profile:
 
-## ⚙️ Tech Stack
-
-### 🖥️ Frontend [AI-assisted UI development (Antigravity, ChatGPT)]
-
-* React
-* JavaScript / TypeScript
-* REST-based API integration
-* Deployed on **Vercel**
-
-### ⚙️ Backend
-
-* Java
-* Spring Boot
-* Strategy Design Pattern
-* REST APIs
-* JPA / Hibernate
-* PostgreSQL
-* Deployed on **Render**
-
-### 🗄️ Database
-
-* PostgreSQL
-* Stores:
-
-  * Market data
-  * Backtest results
-  * Strategy execution logs
-
----
-
-## 🔌 Market Data Integration
-
-The system uses the **Alpha Vantage API** to fetch historical stock price data.
-
-### Challenges with External APIs
-
-* Rate limits
-* High latency
-* Redundant calls for same symbols
-
----
-
-## 🚀 API Optimization Strategies Implemented
-
-To **reduce API calls and improve performance**, the system uses:
-
-### ✅ 1. Local Persistence
-
-* Fetched market data is stored in PostgreSQL
-* Same data is reused for future backtests
-
-### ✅ 2. Time-based Fetching
-
-* API is called only if:
-
-  * Data is missing
-  * Data is outdated
-
-### ✅ 3. Strategy-Level Reuse
-
-* Multiple strategies reuse the **same price dataset**
-* Indicators are calculated **in-memory** on shared data
-
-📉 Result:
-
-* Lower latency
-* Reduced API quota usage
-* Better scalability
-
----
-
-## 🧩 Strategy Design Pattern (Core Architecture)
-
-### Why Strategy Pattern?
-
-Trading systems naturally evolve:
-
-* New indicators
-* New strategies
-* New execution logic
-
-Hardcoding logic would lead to:
-❌ Tight coupling
-❌ Code duplication
-❌ Difficult scaling
-
----
-
-### Strategy Interface (Conceptual)
-
-```java
-public interface TradingStrategy {
-    TradeSignal evaluate(List<CandleData> data);
-}
+```powershell
+$env:SPRING_PROFILES_ACTIVE = "local"
+.\mvnw.cmd spring-boot:run
 ```
 
-### Concrete Implementations
+Alternatively, build and start both the application and database. Compose waits for PostgreSQL to become healthy before starting the application:
 
-* `SMAStrategy`
-* `RSIStrategy`
+```powershell
+docker compose --profile app up --build
+```
 
-### Benefits
+The local profile defaults to:
 
-✔️ Open/Closed Principle
-✔️ Easy to add new strategies
-✔️ No impact on existing code
-✔️ Clean separation of concerns
+- JDBC URL: `jdbc:postgresql://localhost:5432/backtesting`
+- Database username/password: `backtesting` / `backtesting`
+- Server port: `8080`
+- Ticker seeding enabled
 
----
+These defaults are for local development only. Override them with environment variables when necessary. `.env.example` lists the supported local values.
 
-## 🧠 Mental Model of Execution
+## Verification
 
-1. User selects:
+Run the complete build and test suite:
 
-   * Stock symbol
-   * Strategy (SMA / RSI)
-2. Backend:
+```powershell
+.\mvnw.cmd clean verify
+```
 
-   * Fetches historical data (DB or API)
-   * Applies selected strategy
-   * Simulates trades
-3. Results:
+The Spring context integration test uses a real PostgreSQL Testcontainer and never contacts Yahoo. It is skipped when Docker is unavailable; CI runs it with Docker enabled.
 
-   * Profit/Loss
-   * Trade history
-   * Indicator values
-4. Frontend:
+Run the dependency vulnerability scan:
 
-   * Displays charts and metrics
+```powershell
+$env:NVD_API_KEY = "your-nvd-api-key"
+.\mvnw.cmd -Psecurity -DskipTests verify
+```
 
----
+The security profile fails for vulnerabilities with CVSS 7 or higher. Suppressions must be narrow, justified, owned, and time-limited in `dependency-check-suppressions.xml`.
 
-## 🔮 Future Roadmap
+## Docker image
 
-### 🚀 Planned Enhancements
+Build the production image:
 
-#### 🔐 User Accounts & Personalization
+```powershell
+docker build -t backtesting-strategies .
+```
 
-* Login / Registration
-* Save:
+Run it with production configuration:
 
-  * Preferred strategies
-  * Risk parameters
-  * Watchlists
+```powershell
+docker run --rm -p 7860:7860 `
+  -e DB_URL="jdbc:postgresql://host.docker.internal:5432/backtesting" `
+  -e DB_USERNAME="backtesting" `
+  -e DB_PASSWORD="replace-me" `
+  -e JWT_SECRET="replace-with-a-base64-encoded-secret-of-at-least-32-bytes" `
+  backtesting-strategies
+```
 
-#### ⚡ Redis Integration
+The image uses the `prod` profile, listens on port `7860` by default, runs as a non-root user, and is built only after Maven verification succeeds.
 
-* Cache market data
-* Cache backtest results
-* Reduce DB and API load
+## Configuration
 
-#### 📈 More Strategies
+| Variable | Required in production | Default | Purpose |
+|---|---:|---|---|
+| `SPRING_PROFILES_ACTIVE` | Yes | None outside the image | Select `local`, `test`, or `prod` |
+| `DB_URL` | Yes | Local profile has a development value | PostgreSQL JDBC URL |
+| `DB_USERNAME` | Yes | Local profile: `backtesting` | PostgreSQL username |
+| `DB_PASSWORD` | Yes | Local profile: `backtesting` | PostgreSQL password |
+| `JWT_SECRET` | Yes | Development-only local/test keys | Base64-encoded HMAC key of at least 32 bytes |
+| `JWT_EXPIRATION_MS` | No | `86400000` | Access-token lifetime in milliseconds |
+| `TICKER_SEEDER_ENABLED` | No | `false` common/prod, `true` local | Enable curated ticker seeding |
+| `SERVER_PORT` | No | `8080`, image sets `7860` | HTTP port |
+| `JPA_DDL_AUTO` | No | `validate`, local profile uses `update` | Hibernate schema behavior |
+| `JPA_SHOW_SQL` | No | `false` | Local SQL output |
+| `JPA_FORMAT_SQL` | No | `false` | Local SQL formatting |
+| `APP_LOG_LEVEL` | No | `INFO` | Application log level |
+| `ROOT_LOG_LEVEL` | No | `INFO` | Production root log level |
+| `NVD_API_KEY` | CI/security scan | None | NVD API key for OWASP Dependency-Check |
 
-* EMA
-* MACD
-* Bollinger Bands
-* VWAP
-* Multi-indicator hybrid strategies
+Production intentionally has no fallback database credentials or JWT secret. Missing required values cause startup to fail rather than starting insecurely.
 
-#### 📊 Advanced Metrics
+## Current REST API
 
-* Sharpe Ratio
-* Maximum Drawdown
-* Win/Loss Ratio
+Authentication:
 
----
+- `POST /api/auth/register`
+- `POST /api/auth/login`
 
-## 🏁 Summary
+Authenticated market and backtest operations:
 
-This project demonstrates:
+- `GET /api/market/stock/{symbol}`
+- `GET /api/market/quote/{symbol}`
+- `POST /api/backtest/{symbol}`
+- `POST /api/backtest/compare/{symbol}`
+- `POST /api/backtest/portfolio`
+- `GET /api/symbols/search`
+- `GET /api/symbols/exchange/{exchange}`
+- `GET /api/symbols/sector/{sector}`
+- `GET /api/symbols/exchanges`
+- `GET /api/symbols/sectors`
+- `GET /api/symbols/stats`
 
-* Real-world backend architecture
-* Clean design patterns
-* Financial domain understanding
-* Scalable and extensible system design
+Public monitoring:
 
-It is intentionally built as a **foundation** that can evolve into a **full-scale quantitative trading and analysis platform**.
+- `GET /server/ping`
 
----
+The current endpoint contract will be replaced by a versioned API in a later refinement phase.
 
+## Important limitations
 
-I love Finance and Economics -> building side project implementing different trading strategies on market data 
-I am exploring java and have built the entire backend on java using springboot 
+- Signals currently execute on the same closing price used to calculate them, which introduces execution bias.
+- Prices and capital currently use floating-point values.
+- Corporate-action adjustment is not consistently applied.
+- Fees, slippage, spread, liquidity, and partial fills are not modeled.
+- Portfolio calculations do not yet support currency conversion.
+- Yahoo refreshes are synchronous and do not yet have production-grade timeout, retry, or circuit-breaker behavior.
+- Backtest results are returned to callers but are not persisted as reproducible runs.
+- The application uses Hibernate-managed local schema updates until Flyway is introduced in a later phase.
 
-![project structure](BackestingProjectStructure-High-Level-Design.drawio.png)
+These limitations are tracked in `Plan.md` and the phase plans under the locally ignored `refinement/` directory.
+
+## Yahoo Finance data notice
+
+The project uses Yahoo Finance endpoints through an unaffiliated Java library and a direct chart request. Data availability, correctness, latency, throttling, and licensing are controlled by the provider and are not guaranteed. The integration is suitable for demonstration and learning, not for executing trades or providing regulated financial services. Review Yahoo's current terms and data-provider notices before deploying beyond personal educational use.
+
+## Delivery and quality gates
+
+GitHub Actions verifies the Maven Wrapper on Windows, runs the full verification suite on Linux with Docker, performs a dependency-security scan, and builds the production container. Application logs use SLF4J and must not contain credentials, tokens, cookies, or provider authentication material.

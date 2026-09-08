@@ -3,6 +3,7 @@ package com.rods.backtestingstrategies.controller;
 import com.rods.backtestingstrategies.entity.StockSymbol;
 import com.rods.backtestingstrategies.repository.StockSymbolRepository;
 import com.rods.backtestingstrategies.service.MarketDataService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/symbols")
 @CrossOrigin
+@Slf4j
 public class SymbolController {
 
     private final MarketDataService marketDataService;
@@ -31,7 +33,7 @@ public class SymbolController {
             @RequestParam String query,
             @RequestParam(required = false) String exchange
     ) {
-        System.out.println("Symbol search request: query=" + query + ", exchange=" + exchange);
+        log.debug("Symbol search requested for query={}, exchange={}", query, exchange);
 
         if (query == null || query.length() < 1) {
             return List.of();

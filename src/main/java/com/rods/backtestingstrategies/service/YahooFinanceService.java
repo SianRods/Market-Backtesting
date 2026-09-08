@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
 import yahoofinance.histquotes.HistoricalQuote;
-import yahoofinance.histquotes.Interval;
 import yahoofinance.quotes.stock.StockQuote;
 import yahoofinance.quotes.stock.StockStats;
 
@@ -15,7 +14,8 @@ import java.util.Map;
 
 /**
  * Service wrapping the Yahoo Finance API.
- * No API key required. No enforced rate limits.
+ * Yahoo does not require an API key for the endpoints used here, but availability
+ * and throttling are controlled by the provider and are not guaranteed.
  */
 @Service
 public class YahooFinanceService {
