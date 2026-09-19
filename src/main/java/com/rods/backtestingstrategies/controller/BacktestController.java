@@ -1,9 +1,9 @@
 package com.rods.backtestingstrategies.controller;
 
-import com.rods.backtestingstrategies.entity.BacktestResult;
+import com.rods.backtestingstrategies.domain.BacktestResult;
+import com.rods.backtestingstrategies.domain.StrategyComparisonResult;
 import com.rods.backtestingstrategies.entity.PortfolioRequest;
 import com.rods.backtestingstrategies.entity.PortfolioResult;
-import com.rods.backtestingstrategies.entity.StrategyComparisonResult;
 import com.rods.backtestingstrategies.service.BacktestService;
 import com.rods.backtestingstrategies.strategy.StrategyType;
 import lombok.RequiredArgsConstructor;

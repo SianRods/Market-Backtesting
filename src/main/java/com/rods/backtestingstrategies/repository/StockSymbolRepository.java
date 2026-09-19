@@ -3,6 +3,8 @@ package com.rods.backtestingstrategies.repository;
 import com.rods.backtestingstrategies.entity.StockSymbol;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
@@ -22,6 +24,14 @@ public interface StockSymbolRepository extends JpaRepository<StockSymbol, Long> 
     """)
     List<StockSymbol> searchSymbols(@Param("query") String query);
 
+    @Query("""
+        SELECT s FROM StockSymbol s
+        WHERE LOWER(s.symbol) LIKE LOWER(CONCAT(:query, '%'))
+           OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%'))
+        ORDER BY s.matchScore DESC, s.symbol ASC
+    """)
+    Page<StockSymbol> searchSymbolsPage(@Param("query") String query, Pageable pageable);
+
     /**
      * Search symbols filtered by a specific exchange.
      */
@@ -35,6 +45,19 @@ public interface StockSymbolRepository extends JpaRepository<StockSymbol, Long> 
     List<StockSymbol> searchSymbolsByExchange(
             @Param("query") String query,
             @Param("exchange") String exchange
+    );
+
+    @Query("""
+        SELECT s FROM StockSymbol s
+        WHERE (LOWER(s.symbol) LIKE LOWER(CONCAT(:query, '%'))
+           OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')))
+           AND LOWER(s.exchange) = LOWER(:exchange)
+        ORDER BY s.matchScore DESC, s.symbol ASC
+    """)
+    Page<StockSymbol> searchSymbolsByExchangePage(
+            @Param("query") String query,
+            @Param("exchange") String exchange,
+            Pageable pageable
     );
 
     /**

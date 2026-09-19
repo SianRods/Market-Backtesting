@@ -13,6 +13,11 @@ spring:
     properties:
       hibernate:
         format_sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: 1
+    validate-migration-naming: true
 
 ticker:
   seeder:
@@ -26,3 +31,18 @@ server:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION_MS:86400000}
+
+market-data:
+  yahoo:
+    base-uri: ${YAHOO_BASE_URI:https://query1.finance.yahoo.com}
+    connect-timeout: ${YAHOO_CONNECT_TIMEOUT:3s}
+    response-timeout: ${YAHOO_RESPONSE_TIMEOUT:10s}
+    request-timeout: ${YAHOO_REQUEST_TIMEOUT:15s}
+    user-agent: ${YAHOO_USER_AGENT:BacktestingStrategies/phase-2 educational-validation}
+  retry:
+    max-attempts: ${YAHOO_MAX_ATTEMPTS:3}
+    initial-backoff: ${YAHOO_INITIAL_BACKOFF:250ms}
+    max-backoff: ${YAHOO_MAX_BACKOFF:3s}
+  freshness:
+    close-grace: ${MARKET_DATA_CLOSE_GRACE:20m}
+    correction-overlap-days: ${MARKET_DATA_CORRECTION_OVERLAP_DAYS:5}

@@ -6,7 +6,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers(disabledWithoutDocker = true)
-abstract class PostgresIntegrationTest {
+public abstract class PostgresIntegrationTest {
 
     @Container
     @ServiceConnection
@@ -14,6 +14,5 @@ abstract class PostgresIntegrationTest {
             new PostgreSQLContainer<>("postgres:17-alpine")
                     .withDatabaseName("backtesting_test")
                     .withUsername("backtesting_test")
-                    .withPassword("backtesting_test")
-                    .withInitScript("test-schema.sql");
+                    .withPassword("backtesting_test");
 }

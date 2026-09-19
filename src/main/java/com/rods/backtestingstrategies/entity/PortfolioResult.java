@@ -1,33 +1,25 @@
 package com.rods.backtestingstrategies.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.rods.backtestingstrategies.domain.BacktestResult;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
-/**
- * Result of portfolio-level backtesting.
- */
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class PortfolioResult {
+/** Transitional endpoint result; Phase 5 replaces this with currency-safe portfolio accounting. */
+public record PortfolioResult(
+        BigDecimal totalCapital,
+        BigDecimal finalValue,
+        BigDecimal totalPnl,
+        BigDecimal totalReturnPercent,
+        String strategyUsed,
+        Map<String, BacktestResult> symbolResults,
+        Map<String, BigDecimal> allocations,
+        List<String> warnings) {
 
-    private double totalCapital;
-    private double finalValue;
-    private double totalPnL;
-    private double totalReturnPct;
-    private String strategyUsed;
-
-    // Aggregate performance metrics across the portfolio
-    private PerformanceMetrics aggregateMetrics;
-
-    // Per-symbol breakdown
-    private Map<String, BacktestResult> symbolResults;
-
-    // Allocation info
-    private Map<String, Double> allocations; // symbol → allocated capital
+    public PortfolioResult {
+        symbolResults = Map.copyOf(symbolResults);
+        allocations = Map.copyOf(allocations);
+        warnings = List.copyOf(warnings);
+    }
 }
